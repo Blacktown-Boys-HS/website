@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Password Manager</title>
+
+<style>
+/* ============================================================
+   DEFAULT THEME VARIABLES (overwritten by custom theme)
+   ============================================================ */
+:root {
+    --primary: #2563eb;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #1e293b;
+    --border: #d1d5db;
+}
+
+/* ============================================================
+   GLOBAL STYLES
+   ============================================================ */
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    font-family: system-ui, sans-serif;
+    color: var(--text);
+    transition: background .25s, color .25s;
+}
+
+.container {
+    max-width: 700px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+.nav {
+    display: flex;
+    justify-content: space-around;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+    position: sticky;
+    top: 0;
+    position: relative;
+}
+
+.nav button {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.nav-underline {
+    position: absolute;
+    bottom: 0;
+    height: 3px;
+    background: var(--primary);
+    width: 0;
+    left: 0;
+    transition: left .25s ease, width .25s ease;
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-top: 20px;
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+label {
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+}
+
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 15px;
+    font-size: 1rem;
+    background: var(--card);
+    color: var(--text);
+    box-sizing: border-box;
+}
+
+input[type="color"] {
+    width: 60px;
+    height: 35px;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+button.primary {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+button.primary:hover {
+    background: #1d4ed8;
+}
+
+.theme-btn {
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text);
+    width: 48%;
+    transition: border .2s;
+}
+
+.theme-btn:hover {
+    border-color: var(--primary);
+}
+
+/* ============================================================
+   PASSWORD LIST
+   ============================================================ */
+.password-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+.password-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.password-actions button {
+    margin-left: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+}
+
+.show-btn { background: #64748b; color: white; }
+.edit-btn { background: #0ea5e9; color: white; }
+.delete-btn { background: #ef4444; color: white; }
+
+/* ============================================================
+   HOMEPAGE OVERLAY (EXCLUDED FROM THEME)
+   ============================================================ */
+#homeOverlay {
+    position: fixed;
+    inset: 0;
+    background: #0f172a; /* fixed dark */
+    color: #f1f5f9;      /* fixed light text */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity .4s ease;
+}
+
+#homeOverlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#homeOverlay button {
+    background: #3b82f6;
+}
+
+#homeOverlay button:hover {
+    background: #2563eb;
+}
+
+/* ============================================================
+   THEME PICKER ROWS
+   ============================================================ */
+.theme-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 12px 0;
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HOMEPAGE OVERLAY
+     ============================================================ -->
+<div id="homeOverlay">
+    <h1 style="margin-bottom: 20px;">Password Manager</h1>
+    <button class="primary" style="width:200px;" onclick="closeHome()">Enter</button>
+</div>
+
+<!-- ============================================================
+     NAVIGATION
+     ============================================================ -->
+<div class="nav">
+    <button class="active" onclick="switchPage('addPage')">Add Password</button>
+    <button onclick="switchPage('viewPage')">View Passwords</button>
+    <button onclick="switchPage('settingsPage')">Settings</button>
+    <button onclick="switchPage('miscPage')">Misc</button>
+    <div class="nav-underline" id="navUnderline"></div>
+</div>
+
+<div class="container">
+
+<!-- ============================================================
+     ADD PASSWORD PAGE
+     ============================================================ -->
+<div id="addPage" class="page" style="display: block;">
+    <div class="card">
+        <h2>Add New Password</h2>
+
+        <label>Website / Service</label>
+        <input id="site" type="text" placeholder="Platform Name">
+
+        <label>Password</label>
+        <input id="password" type="password" placeholder="-----">
+
+        <button class="primary" onclick="savePassword()">Save Password</button>
+    </div>
+</div>
+
+<!-- ============================================================
+     VIEW PASSWORDS PAGE
+     ============================================================ -->
+<div id="viewPage" class="page" style="display: none;">
+    <div class="card">
+        <h2>Saved Passwords</h2>
+        <div id="passwordList"></div>
+    </div>
+</div>
+
+<!-- ============================================================
+     SETTINGS PAGE
+     ============================================================ -->
+<div id="settingsPage" class="page" style="display: none;">
+    <div class="card">
+        <h2>Settings</h2>
+
+        <h3>Theme Presets</h3>
+        <div style="display:flex;gap:10px;margin-bottom:20px;">
+            <button class="theme-btn" onclick="applyPreset('light')">Light</button>
+            <button class="theme-btn" onclick="applyPreset('dark')">Dark</button>
+        </div>
+
+        <h3>Custom Theme</h3>
+
+        <div class="theme-row">
+            <span>Primary Color</span>
+            <input type="color" id="colorPrimary" onchange="updateTheme()">
+        </div>
+
+        <div class="theme-row">
+            <span>Background</span>
+            <input type="color" id="colorBg" onchange="updateTheme()">
+        </div>
+
+        <div class="theme-row">
+            <span>Card</span>
+            <input type="color" id="colorCard" onchange="updateTheme()">
+        </div>
+
+        <div class="theme-row">
+            <span>Text</span>
+            <input type="color" id="colorText" onchange="updateTheme()">
+        </div>
+
+        <div class="theme-row">
+            <span>Border</span>
+            <input type="color" id="colorBorder" onchange="updateTheme()">
+        </div>
+
+        <h3 style="margin-top:30px;">Other Settings</h3>
+
+        <label style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+            <span>Disable Delete Confirmations</span>
+            <input type="checkbox" id="noConfirmToggle" onchange="toggleConfirmSetting()">
+        </label>
+
+    </div>
+</div>
+
+<!-- ============================================================
+     MISC PAGE
+     ============================================================ -->
+<div id="miscPage" class="page" style="display: none;">
+    <div class="card">
+        <h2>Miscellaneous</h2>
+
+        <div class="misc-section">
+            <h3>Terms of Service</h3>
+            <p>
+                By using this service, you agree that you are liable for any losses or breaches of your information and no one else will be held responsible.
+            </p>
+        </div>
+
+        <div class="misc-section">
+            <h3>a</h3>
+            <p>a</p>
+        </div>
+
+        <div class="misc-section">
+            <h3>a</h3>
+            <p>a</p>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<script>
+/* ============================================================
+   PAGE SWITCHING
+   ============================================================ */
+function switchPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    document.getElementById(pageId).style.display = 'block';
+
+    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+
+    const btn = [...document.querySelectorAll('.nav button')]
+        .find(b => b.getAttribute("onclick").includes(pageId));
+    if (btn) {
+        btn.classList.add('active');
+        updateUnderline(btn);
+    }
+
+    if (pageId === 'viewPage') renderPasswords();
+}
+
+/* ============================================================
+   PASSWORD STORAGE
+   ============================================================ */
+let passwords = JSON.parse(localStorage.getItem("passwords") || "[]");
+
+function savePassword() {
+    const site = document.getElementById("site").value.trim();
+    const pass = document.getElementById("password").value.trim();
+    if (!site || !pass) return alert("Fill in both fields.");
+    passwords.push({ id: Date.now(), site, password: pass });
+    localStorage.setItem("passwords", JSON.stringify(passwords));
+    document.getElementById("site").value = "";
+    document.getElementById("password").value = "";
+    alert("Saved!");
+}
+
+function renderPasswords() {
+    const list = document.getElementById("passwordList");
+    list.innerHTML = "";
+    passwords.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "password-item";
+        div.innerHTML = `
+            <div class="password-header">
+                <strong>${escapeHtml(item.site)}</strong>
+                <div class="password-actions">
+                    <button class="show-btn" onclick="togglePassword(${item.id})">Show</button>
+                    <button class="edit-btn" onclick="editPassword(${item.id})">Edit</button>
+                    <button class="delete-btn" onclick="deletePassword(${item.id})">Delete</button>
+                </div>
+            </div>
+            <p id="pw-${item.id}" style="margin-top:8px; font-size:1rem;">••••••••</p>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function togglePassword(id) {
+    const p = document.getElementById("pw-" + id);
+    const entry = passwords.find(x => x.id === id);
+    p.innerText = p.innerText === "••••••••" ? entry.password : "••••••••";
+}
+
+function editPassword(id) {
+    const entry = passwords.find(x => x.id === id);
+    const newPass = prompt("Enter new password:", entry.password);
+    if (!newPass) return;
+    entry.password = newPass;
+    localStorage.setItem("passwords", JSON.stringify(passwords));
+    renderPasswords();
+}
+
+function deletePassword(id) {
+    if (localStorage.getItem("noConfirm") !== "1") {
+        if (!confirm("Delete this password?")) return;
+    }
+    passwords = passwords.filter(x => x.id !== id);
+    localStorage.setItem("passwords", JSON.stringify(passwords));
+    renderPasswords();
+}
+
+/* ============================================================
+   CONFIRMATION SETTING
+   ============================================================ */
+function toggleConfirmSetting() {
+    const enabled = document.getElementById("noConfirmToggle").checked;
+    localStorage.setItem("noConfirm", enabled ? "1" : "0");
+}
+
+if (localStorage.getItem("noConfirm") === "1") {
+    setTimeout(() => document.getElementById("noConfirmToggle").checked = true, 50);
+}
+
+/* ============================================================
+   HOMEPAGE ALWAYS SHOWS
+   ============================================================ */
+function closeHome() {
+    const overlay = document.getElementById("homeOverlay");
+    overlay.classList.add("hidden");
+    setTimeout(() => overlay.style.display = "none", 400);
+}
+
+/* ============================================================
+   UNDERLINE ANIMATION
+   ============================================================ */
+function updateUnderline(button) {
+    const underline = document.getElementById("navUnderline");
+    underline.style.width = button.offsetWidth + "px";
+    underline.style.left = button.offsetLeft + "px";
+}
+
+window.onload = () => {
+    const first = document.querySelector(".nav button.active");
+    if (first) updateUnderline(first);
+    loadTheme();
+};
+
+/* ============================================================
+   THEME SYSTEM
+   ============================================================ */
+function applyPreset(type) {
+    let preset = {};
+
+    if (type === "light") {
+        preset = {
+            primary: "#2563eb",
+            bg: "#f1f5f9",
+            card: "#ffffff",
+            text: "#1e293b",
+            border: "#d1d5db"
+        };
+    }
+
+    if (type === "dark") {
+        preset = {
+            primary: "#3b82f6",
+            bg: "#0f172a",
+            card: "#1e293b",
+            text: "#f1f5f9",
+            border: "#334155"
+        };
+    }
+
+    // Apply preset to inputs
+    document.getElementById("colorPrimary").value = preset.primary;
+    document.getElementById("colorBg").value = preset.bg;
+    document.getElementById("colorCard").value = preset.card;
+    document.getElementById("colorText").value = preset.text;
+    document.getElementById("colorBorder").value = preset.border;
+
+    updateTheme();
+}
+
+function updateTheme() {
+    const colors = {
+        primary: document.getElementById("colorPrimary").value,
+        bg: document.getElementById("colorBg").value,
+        card: document.getElementById("colorCard").value,
+        text: document.getElementById("colorText").value,
+        border: document.getElementById("colorBorder").value
+    };
+
+    for (const key in colors) {
+        document.documentElement.style.setProperty(`--${key}`, colors[key]);
+    }
+
+    localStorage.setItem("customTheme", JSON.stringify(colors));
+}
+
+function loadTheme() {
+    const saved = JSON.parse(localStorage.getItem("customTheme"));
+    if (!saved) return;
+
+    document.getElementById("colorPrimary").value = saved.primary;
+    document.getElementById("colorBg").value = saved.bg;
+    document.getElementById("colorCard").value = saved.card;
+    document.getElementById("colorText").value = saved.text;
+    document.getElementById("colorBorder").value = saved.border;
+
+    updateTheme();
+}
+
+function escapeHtml(text) {
+    return text.replace(/[&<>]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[c]));
+}
+</script>
+
+</body>
+</html>

@@ -1,2 +1,2 @@
 # website
-website thing for assesment by oliver syrls
+website thing for assesment
